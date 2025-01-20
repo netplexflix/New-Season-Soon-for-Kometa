@@ -216,9 +216,9 @@ def create_collection_yaml(output_file, shows, config):
     data = {
         "collections": {
             collection_name: {
-                "collection_order": "custom",
                 "summary": f"A new season will air within {future_days} days",
                 "sort_title": sort_title_quoted,
+                "sync_mode": "sync",
                 "tvdb_show": tvdb_ids_str
             }
         }

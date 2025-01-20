@@ -4,7 +4,7 @@ sonarr_api_key: 'YOUR_SONARR_API_KEY'
 future_days: 60
 skip_unmonitored: true
 
-collection_name: "New Season Soon"
+collection_name: "New Season Airing Soon"
 sort_title: "New Season Soon"
 
 backdrop:
@@ -17,11 +17,11 @@ backdrop:
   vertical_offset: 20
 
 text:
-  date_format: "dd/mm"      # e.g., "yyyy-mm-dd", "dd/mm", etc.
-  use_text: "New Season"    # e.g. "Season Premieres" or "New Season"
+  date_format: "dd/mm"      # e.g., "yyyy-mm-dd", "mm/dd", "dd/mm", etc.
+  use_text: "NEW SEASON"    # e.g. "SEASON PREMIERES" or "NEW SEASON"
   horizontal_align: center
   horizontal_offset: 0
   vertical_align: bottom
-  vertical_offset: 30
+  vertical_offset: 35
   font_size: 70
   font_color: "#FFFFFF"
