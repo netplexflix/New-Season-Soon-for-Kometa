@@ -96,7 +96,7 @@ The previous configuration will be erased so Kometa will automatically remove ov
 
 
 ### ⚠️ **Do you Need Help or have Feedback?**
-- Join the [Discord](https://discord.gg/sWQ5m2qM).
+- Join the [Discord](https://discord.gg/VBNUJd7tx3).
 - Open an [Issue](https://github.com/netplexflix/New-Season-Soon-for-Kometa/issues) on GitHub.
 
 
