@@ -5,7 +5,7 @@ from collections import defaultdict
 import sys
 import os
 
-NSSK_VERSION = "1.1"
+NSSK_VERSION = "1.2"
 
 # ANSI color codes
 GREEN = '\033[32m'
@@ -29,8 +29,13 @@ def load_config(file_path='config.yml'):
 def process_sonarr_url(base_url, api_key):
     base_url = base_url.rstrip('/')
     
+    if base_url.startswith('http'):
+        protocol_end = base_url.find('://') + 3
+        next_slash = base_url.find('/', protocol_end)
+        if next_slash != -1:
+            base_url = base_url[:next_slash]
+    
     api_paths = [
-        '',
         '/api/v3',
         '/sonarr/api/v3'
     ]
