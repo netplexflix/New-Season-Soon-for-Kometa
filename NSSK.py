@@ -1,11 +1,11 @@
 import requests
 import yaml
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from collections import defaultdict
 import sys
 import os
 
-NSSK_VERSION = "1.0"
+NSSK_VERSION = "1.1"
 
 # ANSI color codes
 GREEN = '\033[32m'
@@ -26,59 +26,87 @@ def load_config(file_path='config.yml'):
         print(f"Error parsing YAML config file: {e}")
         sys.exit(1)
 
+def process_sonarr_url(base_url, api_key):
+    base_url = base_url.rstrip('/')
+    
+    api_paths = [
+        '',
+        '/api/v3',
+        '/sonarr/api/v3'
+    ]
+    
+    for path in api_paths:
+        test_url = f"{base_url}{path}"
+        try:
+            headers = {"X-Api-Key": api_key}
+            response = requests.get(f"{test_url}/health", headers=headers, timeout=10)
+            if response.status_code == 200:
+                print(f"Successfully connected to Sonarr at: {test_url}")
+                return test_url
+        except requests.exceptions.RequestException as e:
+            print(f"{ORANGE}Testing URL {test_url} - Failed: {str(e)}{RESET}")
+            continue
+    
+    raise ConnectionError(f"{RED}Unable to establish connection to Sonarr. Tried the following URLs:\n" + 
+                        "\n".join([f"- {base_url}{path}" for path in api_paths]) + 
+                        f"\nPlease verify your URL and API key and ensure Sonarr is running.{RESET}")
+
 def get_sonarr_series(sonarr_url, api_key):
-    url = f"{sonarr_url}/series"
-    headers = {"X-Api-Key": api_key}
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    return response.json()
+    try:
+        url = f"{sonarr_url}/series"
+        headers = {"X-Api-Key": api_key}
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"{RED}Error connecting to Sonarr: {str(e)}{RESET}")
+        sys.exit(1)
 
 def get_sonarr_episodes(sonarr_url, api_key, series_id):
-    url = f"{sonarr_url}/episode?seriesId={series_id}"
-    headers = {"X-Api-Key": api_key}
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    return response.json()
+    try:
+        url = f"{sonarr_url}/episode?seriesId={series_id}"
+        headers = {"X-Api-Key": api_key}
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"{RED}Error fetching episodes from Sonarr: {str(e)}{RESET}")
+        sys.exit(1)
 
 def find_new_season_shows(sonarr_url, api_key, future_days, skip_unmonitored=False):
-    cutoff_date = datetime.utcnow() + timedelta(days=future_days)
+    cutoff_date = datetime.now(UTC) + timedelta(days=future_days)
     matched_shows = []
     skipped_shows = []
     
-    # Get all series
     all_series = get_sonarr_series(sonarr_url, api_key)
     
     for series in all_series:
         episodes = get_sonarr_episodes(sonarr_url, api_key, series['id'])
         
-        # Filter future episodes
         future_episodes = []
         for ep in episodes:
             air_date_str = ep.get('airDateUtc')
             if not air_date_str:
                 continue
             
-            air_date = datetime.fromisoformat(air_date_str.replace('Z',''))
+            air_date = datetime.fromisoformat(air_date_str.replace('Z','')).replace(tzinfo=UTC)
             
-            if air_date > datetime.utcnow():
+            if air_date > datetime.now(UTC):
                 future_episodes.append(ep)
         
-        # Sort future episodes by air date
-        future_episodes.sort(key=lambda x: datetime.fromisoformat(x['airDateUtc'].replace('Z','')))
+        future_episodes.sort(key=lambda x: datetime.fromisoformat(x['airDateUtc'].replace('Z','')).replace(tzinfo=UTC))
         
         if not future_episodes:
             continue
         
-        # The next unaired episode
         next_future = future_episodes[0]
         
         air_date_next_str = next_future.get('airDateUtc')
         if not air_date_next_str:
             continue
         
-        air_date_next = datetime.fromisoformat(air_date_next_str.replace('Z',''))
+        air_date_next = datetime.fromisoformat(air_date_next_str.replace('Z','')).replace(tzinfo=UTC)
         
-        # Check if it's the premiere, not downloaded, within cutoff
         if (
             next_future['seasonNumber'] >= 1
             and next_future['episodeNumber'] == 1
@@ -96,10 +124,8 @@ def find_new_season_shows(sonarr_url, api_key, future_days, skip_unmonitored=Fal
             }
             
             if skip_unmonitored:
-                # Check the episode's "monitored" key
                 episode_monitored = next_future.get("monitored", True)
                 
-                # Check if the season is monitored
                 season_monitored = True
                 for season_info in series.get("seasons", []):
                     if season_info.get("seasonNumber") == next_future['seasonNumber']:
@@ -199,8 +225,6 @@ def create_collection_yaml(output_file, shows, config):
     sort_title_value = config.get("sort_title", "+1_2New Season Soon")
     future_days = config.get("future_days", 21)
 
-    # -- Make sure sort_title is always quoted --
-    # We'll define a small "quoted string" class and a custom representer
     class QuotedString(str):
         pass
 
@@ -233,43 +257,52 @@ def main():
 
     config = load_config('config.yml')
     
-    sonarr_url = config['sonarr_url']
-    sonarr_api_key = config['sonarr_api_key']
-    future_days = config['future_days']
-    
-    skip_unmonitored = str(config.get("skip_unmonitored", "false")).lower() == "true"
+    try:
+        # Process and validate Sonarr URL
+        sonarr_url = process_sonarr_url(config['sonarr_url'], config['sonarr_api_key'])
+        sonarr_api_key = config['sonarr_api_key']
+        future_days = config['future_days']
+               
+        skip_unmonitored = str(config.get("skip_unmonitored", "false")).lower() == "true"
 
-    # Print chosen values
-    print(f"future_days: {future_days}")
-    print(f"skip_unmonitored: {skip_unmonitored}\n")
+        # Print chosen values
+        print(f"future_days: {future_days}")
+        print(f"skip_unmonitored: {skip_unmonitored}\n")
 
-    matched_shows, skipped_shows = find_new_season_shows(
-        sonarr_url, sonarr_api_key, future_days, skip_unmonitored
-    )
-    
-    # Print matched shows
-    if matched_shows:
-        print(f"{GREEN}Shows with a new season starting within {future_days} days:{RESET}")
-        for show in matched_shows:
-            print(f"- {show['title']} (Season {show['seasonNumber']}) airs on {show['airDate']} (TVDB ID: {show['tvdbId']})")
-    else:
-        print(f"{RED}No shows with new seasons starting within {future_days} days (or all were skipped).{RESET}")
-    
-    # Print skipped shows if present
-    if skipped_shows:
-        print(f"\n{ORANGE}Skipped shows (unmonitored season):{RESET}")
-        for show in skipped_shows:
-            print(f"- {show['title']} (Season {show['seasonNumber']}) airs on {show['airDate']} (TVDB ID: {show['tvdbId']})")
+        matched_shows, skipped_shows = find_new_season_shows(
+            sonarr_url, sonarr_api_key, future_days, skip_unmonitored
+        )
+        
+        # Print matched shows
+        if matched_shows:
+            print(f"{GREEN}Shows with a new season starting within {future_days} days:{RESET}")
+            for show in matched_shows:
+                print(f"- {show['title']} (Season {show['seasonNumber']}) airs on {show['airDate']}")
+        else:
+            print(f"{RED}No shows with new seasons starting within {future_days} days (or all were skipped).{RESET}")
+        
+        # Print skipped shows if present
+        if skipped_shows:
+            print(f"\n{ORANGE}Skipped shows (unmonitored season):{RESET}")
+            for show in skipped_shows:
+                print(f"- {show['title']} (Season {show['seasonNumber']}) airs on {show['airDate']}")
 
-    # Create YAMLs
-    overlay_file = "NSSK_TV_OVERLAYS.yml"
-    create_overlay_yaml(overlay_file, matched_shows, config)
-    
-    collection_file = "NSSK_TV_COLLECTION.yml"
-    create_collection_yaml(collection_file, matched_shows, config)
-    
-    print(f"\nCreated overlay file: {overlay_file}")
-    print(f"Created collection file: {collection_file}")
+        # Create YAMLs
+        overlay_file = "NSSK_TV_OVERLAYS.yml"
+        create_overlay_yaml(overlay_file, matched_shows, config)
+        
+        collection_file = "NSSK_TV_COLLECTION.yml"
+        create_collection_yaml(collection_file, matched_shows, config)
+        
+        print(f"\nCreated overlay file: {overlay_file}")
+        print(f"Created collection file: {collection_file}")
+
+    except ConnectionError as e:
+        print(f"{RED}Error: {str(e)}{RESET}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"{RED}Unexpected error: {str(e)}{RESET}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
