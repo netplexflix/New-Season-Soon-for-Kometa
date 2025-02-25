@@ -71,6 +71,23 @@ Edit the `config.yml` file in your NSSK folder and edit the settings:
   - **date_format:** The date format to be used on the overlays. e.g.: "yyyy-mm-dd", "mm/dd", "dd/mm", etc.
   - **use_text:** Text to be used on the overlays before the date. e.h.: "NEW SEASON"
 
+>[!NOTE]
+> These are date formats you can use:<br/>
+> `d`: 1 digit day (1)<br/>
+> `dd`: 2 digit day (01)<br/>
+> `ddd`: Abbreviated weekday (Mon)<br/>
+> `dddd`: Full weekday (Monday)<br/>
+><br/>
+> `m`: 1 digit month (1)<br/>
+> `mm`: 2 digit month (01)<br/>
+> `mmm`: Abbreviated month (Jan)<br/>
+> `mmmm`: Full month (January)<br/>
+><br/>
+> `yy`: Two digit year (25)<br/>
+> `yyyy`: Full year (2025)
+>
+>Dividers can be `/`, `-` or a space
+
 ---
 ## 🚀 Usage - Running the Script
 
