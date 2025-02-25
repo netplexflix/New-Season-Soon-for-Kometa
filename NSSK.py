@@ -5,7 +5,7 @@ from collections import defaultdict
 import sys
 import os
 
-NSSK_VERSION = "1.2"
+NSSK_VERSION = "1.3"
 
 # ANSI color codes
 GREEN = '\033[32m'
@@ -179,20 +179,51 @@ def create_overlay_yaml(output_file, shows, config):
     text_config = deepcopy(config.get("text", {}))
     date_format = text_config.pop("date_format", "yyyy-mm-dd")
     use_text = text_config.pop("use_text", "New Season")
-    
-    def format_date(yyyy_mm_dd):
+
+    def format_date(yyyy_mm_dd, date_format):
         dt_obj = datetime.strptime(yyyy_mm_dd, "%Y-%m-%d")
-        if date_format == "dd/mm":
-            return dt_obj.strftime("%d/%m")
-        elif date_format == "mm/dd":
-            return dt_obj.strftime("%m/%d")
-        elif date_format == "yyyy-mm-dd":
-            return dt_obj.strftime("%Y-%m-%d")
-        # Fallback
-        return dt_obj.strftime(date_format)
-    
+        
+        # Create mapping for our custom format specifiers to strftime format codes
+        format_mapping = {
+            'mmm': '%b',    # Abbreviated month name
+            'mmmm': '%B',   # Full month name
+            'mm': '%m',     # 2-digit month
+            'm': '%-m',     # 1-digit month
+            'dddd': '%A',   # Full weekday name
+            'ddd': '%a',    # Abbreviated weekday name
+            'dd': '%d',     # 2-digit day
+            'd': str(dt_obj.day),  # 1-digit day - direct integer conversion
+            'yyyy': '%Y',   # 4-digit year
+            'yyy': '%Y',    # 3+ digit year
+            'yy': '%y',     # 2-digit year
+            'y': '%y'       # Year without century
+        }
+        
+        # Sort format patterns by length (longest first) to avoid partial matches
+        patterns = sorted(format_mapping.keys(), key=len, reverse=True)
+        
+        # First, replace format patterns with temporary markers
+        temp_format = date_format
+        replacements = {}
+        for i, pattern in enumerate(patterns):
+            marker = f"@@{i}@@"
+            if pattern in temp_format:
+                replacements[marker] = format_mapping[pattern]
+                temp_format = temp_format.replace(pattern, marker)
+        
+        # Now replace the markers with strftime formats
+        strftime_format = temp_format
+        for marker, replacement in replacements.items():
+            strftime_format = strftime_format.replace(marker, replacement)
+        
+        try:
+            return dt_obj.strftime(strftime_format)
+        except ValueError as e:
+            print(f"{RED}Error: Invalid date format '{date_format}'. Using default format.{RESET}")
+            return yyyy_mm_dd  # Return original format as fallback
+
     for date_str in sorted(date_to_tvdb_ids):
-        formatted_date = format_date(date_str)
+        formatted_date = format_date(date_str, date_format)
         sub_overlay_config = deepcopy(text_config)
         sub_overlay_config["name"] = f"text({use_text} {formatted_date})"
         
