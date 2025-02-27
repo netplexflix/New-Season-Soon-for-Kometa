@@ -179,7 +179,7 @@ def create_overlay_yaml(output_file, shows, config):
     text_config = deepcopy(config.get("text", {}))
     date_format = text_config.pop("date_format", "yyyy-mm-dd")
     use_text = text_config.pop("use_text", "New Season")
-    capitalize_dates = config.get("capitalize_dates", False)
+    capitalize_dates = text_config.pop("capitalize_dates", True)
 
     def format_date(yyyy_mm_dd, date_format, capitalize=False):
         dt_obj = datetime.strptime(yyyy_mm_dd, "%Y-%m-%d")
