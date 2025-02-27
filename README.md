@@ -69,7 +69,9 @@ Edit the `config.yml` file in your NSSK folder and edit the settings:
 - **backdrop:** Change backdrop (the colored banner behind the text) size, color and positioning. [More info here](https://kometa.wiki/en/latest/files/overlays/?h=overlay#backdrop-overlay)
 - **text:** Change text color and positioning. [More info here](https://kometa.wiki/en/latest/files/overlays/?h=overlay#text-overlay)
   - **date_format:** The date format to be used on the overlays. e.g.: "yyyy-mm-dd", "mm/dd", "dd/mm", etc.
+  - **capitalize_dates:** `true` will capitalize letters in dates.
   - **use_text:** Text to be used on the overlays before the date. e.h.: "NEW SEASON"
+
 
 >[!NOTE]
 > These are date formats you can use:<br/>
