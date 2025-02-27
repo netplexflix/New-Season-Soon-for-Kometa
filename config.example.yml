@@ -6,6 +6,7 @@ skip_unmonitored: true
 
 collection_name: "New Season Airing Soon"
 sort_title: "New Season Soon"
+capitalize_dates: true
 
 backdrop:
   back_color: "#81007F"
@@ -17,7 +18,7 @@ backdrop:
   vertical_offset: 20
 
 text:
-  date_format: "dd/mm"      # e.g., "yyyy-mm-dd", "mm/dd", "dd/mm", etc.
+  date_format: "ddd dd/mm"      # e.g., "yyyy-mm-dd", "mm/dd", "dd/mm", etc.
   use_text: "NEW SEASON"    # e.g. "SEASON PREMIERES" or "NEW SEASON"
   horizontal_align: center
   horizontal_offset: 0

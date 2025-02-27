@@ -5,7 +5,7 @@ from collections import defaultdict
 import sys
 import os
 
-NSSK_VERSION = "1.3"
+NSSK_VERSION = "1.4"
 
 # ANSI color codes
 GREEN = '\033[32m'
@@ -179,8 +179,9 @@ def create_overlay_yaml(output_file, shows, config):
     text_config = deepcopy(config.get("text", {}))
     date_format = text_config.pop("date_format", "yyyy-mm-dd")
     use_text = text_config.pop("use_text", "New Season")
+    capitalize_dates = config.get("capitalize_dates", False)
 
-    def format_date(yyyy_mm_dd, date_format):
+    def format_date(yyyy_mm_dd, date_format, capitalize=False):
         dt_obj = datetime.strptime(yyyy_mm_dd, "%Y-%m-%d")
         
         # Create mapping for our custom format specifiers to strftime format codes
@@ -217,13 +218,16 @@ def create_overlay_yaml(output_file, shows, config):
             strftime_format = strftime_format.replace(marker, replacement)
         
         try:
-            return dt_obj.strftime(strftime_format)
+            result = dt_obj.strftime(strftime_format)
+            if capitalize:
+                result = result.upper()
+            return result
         except ValueError as e:
             print(f"{RED}Error: Invalid date format '{date_format}'. Using default format.{RESET}")
             return yyyy_mm_dd  # Return original format as fallback
 
     for date_str in sorted(date_to_tvdb_ids):
-        formatted_date = format_date(date_str, date_format)
+        formatted_date = format_date(date_str, date_format, capitalize_dates)
         sub_overlay_config = deepcopy(text_config)
         sub_overlay_config["name"] = f"text({use_text} {formatted_date})"
         
