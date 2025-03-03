@@ -1,5 +1,8 @@
 # 📺 New Season Soon for Kometa
 
+>[!NOTE]
+> The functionality of this script has been consolidated in [TV Show Status for Kometa](https://github.com/netplexflix/TV-show-status-for-Kometa)
+
 Inspired by [PATTRMM](https://github.com/InsertDisc/pattrmm) this simplifed script checks your [Sonarr](https://sonarr.tv/) for TV Shows for which a new season is airing within a chosen amount of days and creates .yml files which can be used by [Kometa](https://kometa.wiki/) to create a collection and overlays.
 
 ![Image](https://github.com/user-attachments/assets/d8aefff5-4c91-449a-a2f3-c96b97aa2721)
