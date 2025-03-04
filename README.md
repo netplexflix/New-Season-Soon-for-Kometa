@@ -34,7 +34,7 @@ cd New-Season-Soon-for-Kometa
 - Put the files in this subfolder. (`config.yml`, `NSSK.py` and `requirements.txt`)
 
 ### 3️⃣ Install Dependencies
-- Ensure you have [Python](https://www.python.org/downloads/) installed (`>=3.8` recommended). <br/>
+- Ensure you have [Python](https://www.python.org/downloads/) installed (`>=3.9`). <br/>
 - Open a Terminal in the script's directory
 >[!TIP]
 >Windows Users: <br/>
